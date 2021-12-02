@@ -49,13 +49,37 @@ func TestCache(t *testing.T) {
 		require.Nil(t, val)
 	})
 
-	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+	t.Run("clear", func(t *testing.T) {
+		c := NewCache(3)
+
+		c.Set("qwerty", 1234)
+		_, ok := c.Get("qwerty")
+		require.True(t, ok)
+
+		c.Clear()
+		_, ok = c.Get("qwerty")
+		require.False(t, ok)
+	})
+
+	t.Run("complex", func(t *testing.T) {
+		c := NewCache(3)
+
+		c.Set("2", 2) // [2]
+		c.Set("5", 5) // [5 2]
+		c.Set("1", 1) // [1 5 2]
+		c.Set("2", 2) // [2 1 5]
+
+		_, ok := c.Get("5") // [5 2 1]
+		require.True(t, ok)
+
+		c.Set("3", 3) // [3 5 2]
+		_, ok = c.Get("1")
+		require.False(t, ok)
 	})
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
+	// t.Skip() // Remove me if task with asterisk completed.
 
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
@@ -76,4 +100,25 @@ func TestCacheMultithreading(t *testing.T) {
 	}()
 
 	wg.Wait()
+}
+
+func TestMyCases(t *testing.T) {
+	t.Run("purge old element", func(t *testing.T) {
+		c := NewCache(3)
+
+		c.Set("aaa", 100)
+		c.Set("bbb", 200)
+		c.Set("ccc", 300)
+
+		c.Set("bbb", 220)
+		c.Get("bbb")
+		c.Get("aaa")
+		c.Set("bbb", 222)
+
+		c.Set("ddd", 400) // new elem, the oldest had been purged
+
+		old, ok := c.Get("ccc")
+		require.False(t, ok)
+		require.Nil(t, old)
+	})
 }
