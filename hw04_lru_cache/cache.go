@@ -1,5 +1,9 @@
 package hw04lrucache
 
+import (
+	"sync"
+)
+
 type Key string
 
 type Cache interface {
@@ -9,6 +13,7 @@ type Cache interface {
 }
 
 type lruCache struct {
+	mutex    sync.Mutex
 	capacity int
 	queue    List
 	items    map[Key]*ListItem
@@ -28,6 +33,9 @@ func NewCache(capacity int) Cache {
 }
 
 func (c *lruCache) Set(key Key, value interface{}) bool {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	listItem, ok := c.items[key]
 	cached := cacheItem{key: key, value: value}
 
@@ -48,6 +56,9 @@ func (c *lruCache) Set(key Key, value interface{}) bool {
 }
 
 func (c *lruCache) Get(key Key) (interface{}, bool) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	listItem, ok := c.items[key]
 
 	if ok {
@@ -59,6 +70,9 @@ func (c *lruCache) Get(key Key) (interface{}, bool) {
 }
 
 func (c *lruCache) Clear() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	c.queue = NewList()
 	c.items = map[Key]*ListItem{}
 }
